@@ -5,8 +5,13 @@ const personsRouter = require('./routes/api/persons')
 const notesRouter = require('./routes/api/notes')
 const morgan = require('morgan')
 const cors = require('cors')
+const connectDb = require('./models')
 
 const app = express()
+
+connectDb()
+    .then(res => console.log('Connected to the database.'))
+    .catch(err => console.log(err))
 
 app.disable('x-powered-by')
 app.use(express.json())
@@ -30,7 +35,15 @@ app.use('/api/notes', notesRouter)
 const unknownEndpoint = (req, res, next) => {
     res.status(404).json({error:'This endpoint does not exist or is unavailable'})
 }
-
 app.use(unknownEndpoint) // Called after routes just in case none of them are called
 
-app.listen(port, () => console.log(`Listening on http://localhost:${port}`))
+const errorHandler = (err, req, res, next) => {
+    console.error(err.message)
+    if (err.name === 'CastError') {
+        return res.status(400).json({error: 'Malformatted id'})
+    }
+    next(err)
+}
+app.use(errorHandler)
+
+app.listen(port, () => console.log(`Listening on port ${port}`))

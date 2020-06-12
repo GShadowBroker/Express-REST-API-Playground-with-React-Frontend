@@ -1,14 +1,18 @@
 const express = require('express')
-const persons = require('../database/persons.json')
-const notes = require('../database/notes.json')
+const Person = require('../models/Person')
+const Note = require('../models/Note')
 const router = express.Router()
 
-router.get('/info', (req, res) => {
+router.get('/info', async (req, res) => {
+    let persons = await Person.find({})
+    let notes = await Note.find({})
+
     let newObj = {
         phonebook_records: persons.length,
         notes_records: notes.length,
-        viewed: new Date().toISOString
+        date: new Date()
     }
+
     res.status(200).json(newObj)
 })
 

@@ -1,60 +1,74 @@
 const express = require('express')
 const router = express.Router()
-let notes = require('../../database/notes.json')
-const generateId = require('../../utils/id_generator')
+const Note = require('../../models/Note')
 
-router.get('/', (req, res) => res.status(200).json(notes))
+router.get('/', (req, res) => {
+    Note.find({})
+        .then(notes => {
+            return res.status(200).json(notes)
+        })
+        .catch(err => {
+            console.log(err.message)
+            return res.status(500).json({error:'Server request failed'})
+        })
+})
 
 router.post('/', (req, res) => {
     let { content, important } = req.body
 
-    if (!content) return res.status(400).send({error: 'Content cannot be empty, dumbass!'})
+    if (!content) return res.status(400).send({error: 'Missing content'})
 
-    let newNote = {
-        id: generateId(),
+    let newNote = new Note({
         content: content,
-        date: new Date().toISOString(),
+        date: new Date(),
         important: important || false
-    }
+    })
 
-    notes = [...notes, newNote]
-    return res.status(201).json(newNote)
+    newNote.save()
+        .then(savedNote => {
+            return res.status(201).json(savedNote)
+        })
+        .catch(err => {
+            console.log(err)
+            return res.status(500).json({error:'Couldn\'t finish the request'})
+        })
 })
 
-router.get('/:id', (req, res) => {
-    let id = Number(req.params.id)
-    let note = notes.find(item => item.id === id)
-    if (!note) return res.status(404).json({error: 'Cannot find that shit yo!'})
-    return res.status(200).json(note)
-})
-
-router.delete('/:id', (req, res) => {
-    let id = Number(req.params.id)
-    let note = notes.find(item => item.id === id)
-
-    if (!note) return res.status(404).json({error: 'Cannot delete what doesn\'t exist, you dumbass!'})
+router.get('/:id', (req, res, next) => {
+    let id = req.params.id
     
-    notes = notes.filter(item => item.id !== id)
-    return res.status(204).end()
+    Note.findById(id)
+        .then(note => {
+            if (!note) return res.status(404).json({err:'Record not found'})
+            return res.status(200).json(note)
+        })
+        .catch(err => next(err))
 })
 
-router.put('/:id', (req, res) => {
-    let id = Number(req.params.id)
-    let note = notes.find(item => item.id === id)
+router.delete('/:id', (req, res, next) => {
+    let id = req.params.id
+    Note.findByIdAndDelete(id)
+        .then(deletedNote => {
+            if (!deletedNote) return res.status(404).json({err:'Record not found'})
+            return res.status(204).end()
+        })
+        .catch(err => next(err))
+})
+
+router.put('/:id', (req, res, next) => {
+    let id = req.params.id
     let { content, important } = req.body
 
-    if (!note) return res.status(404).json({error: 'Cannot edit a non-existing note, you dumbass!'})
-    if (!content) res.status(400).send({error: 'New content cannot be empty, dumbass!'})
-
-    let newNote = {
-        id: id,
-        content: content,
-        date: new Date().toISOString(),
-        important: important || false
-    }
-
-    notes = [...notes.filter(item => item.id !== id), newNote]
-    return res.status(201).json(newNote)
+    Note.findByIdAndUpdate(
+            id, 
+            { content: content, important: important || false },
+            { new: true }   
+        )
+            .then(updatedNote => {
+                if (!updatedNote) return res.status(404).json({error:'Cannot find record to modify'})
+                return res.status(201).json(updatedNote)
+            })
+            .catch(err => next(err))
 })
 
 module.exports = router
