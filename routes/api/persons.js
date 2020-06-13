@@ -11,27 +11,44 @@ router.get('/', (req, res) => {
         })
 })
 
+// router.post('/', (req, res, next) => {
+//     let { name, number } = req.body
+
+//     if (!name) return res.status(400).json({error:'Missing name'})
+//     if (!number) return res.status(400).json({error:'Missing number'})
+
+//     Person.findOne({ name: name })
+//         .then(person => {
+//             console.log('person:', person)
+//             if (person) return res.status(400).json({error:'Name already exists'})
+            
+//             let newPerson = new Person({
+//                 name: name,
+//                 number: number
+//             })
+        
+//             newPerson.save()
+//                 .then(createdPerson => {
+//                     return res.status(201).json(createdPerson)
+//                 })
+//                 .catch(err => next(err))
+//         })
+//         .catch(err => next(err))
+// })
 router.post('/', (req, res, next) => {
     let { name, number } = req.body
 
     if (!name) return res.status(400).json({error:'Missing name'})
     if (!number) return res.status(400).json({error:'Missing number'})
+    
+    let newPerson = new Person({
+        name: name,
+        number: number
+    })
 
-    Person.findOne({ name: name })
-        .then(person => {
-            console.log('person:', person)
-            if (person) return res.status(400).json({error:'Name already exists'})
-            
-            let newPerson = new Person({
-                name: name,
-                number: number
-            })
-        
-            newPerson.save()
-                .then(createdPerson => {
-                    return res.status(201).json(createdPerson)
-                })
-                .catch(err => next(err))
+    newPerson.save()
+        .then(createdPerson => {
+            return res.status(201).json(createdPerson)
         })
         .catch(err => next(err))
 })
@@ -66,9 +83,14 @@ router.put('/:id', (req, res, next) => {
     if (!number) return res.status(400).send({error: 'Missing number'})
 
     Person.findByIdAndUpdate(id, {
-        name: name,
-        number: number
-    }, {new: true})
+            name: name,
+            number: number
+        },
+        {
+            new: true,
+            runValidators: true,
+            context: 'query'
+        })
         .then(updatedPerson => {
             if (!updatedPerson) return res.status(404).json({error:'Record not found'})
             return res.status(201).json(updatedPerson)

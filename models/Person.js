@@ -1,16 +1,21 @@
 const mongoose = require('mongoose')
+const uniqueValidator = require('mongoose-unique-validator')
 
 let noteSchema = new mongoose.Schema({
     name: {
         type: String,
         required: true,
-        minlength: 3
+        minlength: 3,
+        unique: true
     },
     number: {
         type: String,
-        required: true
+        required: true,
+        minlength: 8
     }
 })
+
+noteSchema.plugin(uniqueValidator)
 
 noteSchema.set('toJSON', {
     transform: (document, returnedObject) => {

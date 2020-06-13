@@ -10,7 +10,7 @@ const connectDb = require('./models')
 const app = express()
 
 connectDb()
-    .then(res => console.log('Connected to the database.'))
+    .then(() => console.log('Connected to the database.'))
     .catch(err => console.log(err))
 
 app.disable('x-powered-by')
@@ -19,7 +19,7 @@ app.use(express.static('build'))
 app.use(cors())
 
 /*Morgan things*/
-morgan.token('object', function (req, res) {
+morgan.token('object', function (req) {
     let postRequestObject = {
         name: req.body.name,
         number: req.body.number
@@ -32,7 +32,7 @@ app.use('/', indexRouter)
 app.use('/api/persons', personsRouter)
 app.use('/api/notes', notesRouter)
 
-const unknownEndpoint = (req, res, next) => {
+const unknownEndpoint = (req, res) => {
     res.status(404).json({error:'This endpoint does not exist or is unavailable'})
 }
 app.use(unknownEndpoint) // Called after routes just in case none of them are called

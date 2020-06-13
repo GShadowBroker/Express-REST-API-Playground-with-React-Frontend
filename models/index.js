@@ -7,7 +7,8 @@ const connectDb = () => {
         .connect(process.env.DB_CONNECTION_URI, {
             useNewUrlParser: true,
             useUnifiedTopology: true,
-            useFindAndModify: false
+            useFindAndModify: false,
+            useCreateIndex: true
         })
 }
 
