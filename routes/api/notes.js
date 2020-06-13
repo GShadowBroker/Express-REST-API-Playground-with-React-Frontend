@@ -13,7 +13,7 @@ router.get('/', (req, res) => {
         })
 })
 
-router.post('/', (req, res) => {
+router.post('/', (req, res, next) => {
     let { content, important } = req.body
 
     if (!content) return res.status(400).send({error: 'Missing content'})
@@ -28,10 +28,7 @@ router.post('/', (req, res) => {
         .then(savedNote => {
             return res.status(201).json(savedNote)
         })
-        .catch(err => {
-            console.log(err)
-            return res.status(500).json({error:'Couldn\'t finish the request'})
-        })
+        .catch(err => next(err))
 })
 
 router.get('/:id', (req, res, next) => {
