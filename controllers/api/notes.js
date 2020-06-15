@@ -1,9 +1,13 @@
 const express = require('express')
 const router = express.Router()
 const Note = require('../../models/Note')
+const User = require('../../models/User')
+const jwt = require('jsonwebtoken')
+const getTokenFrom = require('../../utils/getTokenFrom')
 
 router.get('/', (req, res) => {
     Note.find({})
+        .populate('user', { name: 1, username: 1 })
         .then(notes => {
             return res.status(200).json(notes)
         })
@@ -13,22 +17,41 @@ router.get('/', (req, res) => {
         })
 })
 
-router.post('/', (req, res, next) => {
+router.post('/', async (req, res, next) => {
     let { content, important } = req.body
 
-    if (!content) return res.status(400).send({error: 'Missing content'})
+    // Validation ...
+    if (!content) return res.status(400).send({error: 'Missing content'}) //remove when validation is added
+    
+    try {
+        // Decode Token
+        const token = getTokenFrom(req)
+        const decodedToken = jwt.verify(token, process.env.TOKEN_SECRET)
 
-    let newNote = new Note({
-        content: content,
-        date: new Date(),
-        important: important || false
-    })
+        if (!(token && decodedToken.id)) {
+            return res.status(401).json({error: 'token missing or invalid'})
+        }
+    
+        // Save
+        let user = await User.findById(decodedToken.id)
 
-    newNote.save()
-        .then(savedNote => {
-            return res.status(201).json(savedNote)
+        let newNote = new Note({
+            content: content,
+            date: new Date(),
+            important: important || false,
+            user: user._id
         })
-        .catch(err => next(err))
+
+        let savedNote = await newNote.save()
+
+        user.notes = [...user.notes, savedNote._id]
+        await user.save()
+
+        return res.status(201).json(savedNote)
+
+    } catch(err) {
+        return next(err)
+    }
 })
 
 router.get('/:id', (req, res, next) => {

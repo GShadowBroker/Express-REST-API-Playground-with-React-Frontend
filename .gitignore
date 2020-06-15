@@ -1,4 +1,5 @@
 node_modules
 *.rest
 test.js
+runtests.js
 .env
